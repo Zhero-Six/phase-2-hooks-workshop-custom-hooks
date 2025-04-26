@@ -19,7 +19,7 @@ export function useLocalStorage(key, initialValue = null) {
 
   useEffect(() => {
     function handleStorage(event) {
-      if (event.key === key) {
+      if (event.key === key && event.newValue !== JSON.stringify(value)) {
         const newValue = event.newValue;
         if (newValue === null) {
           setValue(initialValue);
@@ -38,7 +38,7 @@ export function useLocalStorage(key, initialValue = null) {
     return () => {
       window.removeEventListener("storage", handleStorage);
     };
-  }, [key, initialValue]);
+  }, [key, initialValue, value]);
 
   return [value, setValue];
 }
