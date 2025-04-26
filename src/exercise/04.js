@@ -3,12 +3,42 @@ import { useState, useEffect } from "react";
 export function useLocalStorage(key, initialValue = null) {
   const [value, setValue] = useState(() => {
     const storedValue = localStorage.getItem(key);
-    return storedValue !== null ? storedValue : initialValue;
+    if (storedValue === null) return initialValue;
+    try {
+      return JSON.parse(storedValue);
+    } catch {
+      return storedValue; // Return raw string if not JSON
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem(key, value);
+    const serializedValue =
+      typeof value === "string" ? value : JSON.stringify(value);
+    localStorage.setItem(key, serializedValue);
   }, [key, value]);
+
+  useEffect(() => {
+    function handleStorage(event) {
+      if (event.key === key) {
+        const newValue = event.newValue;
+        if (newValue === null) {
+          setValue(initialValue);
+        } else {
+          try {
+            setValue(JSON.parse(newValue));
+          } catch {
+            setValue(newValue); // Handle raw strings
+          }
+        }
+      }
+    }
+
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [key, initialValue]);
 
   return [value, setValue];
 }
